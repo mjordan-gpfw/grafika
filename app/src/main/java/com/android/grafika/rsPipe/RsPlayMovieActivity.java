@@ -79,6 +79,9 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
     private Allocation mOutputAllocation;
     private HandlerThread mRsHandlerThread;
     private Handler mRsHandler;
+    private long mTimeStart = 0;
+    private long mTimestamp = 0;
+    private int mFrames = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,7 +158,17 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        // ignore
+        long currentTimeMillis = System.currentTimeMillis();
+        if (mTimeStart == 0) {
+            mTimeStart = currentTimeMillis;
+        }
+        if (currentTimeMillis - mTimestamp > 1000) {
+            mTimestamp = currentTimeMillis;
+            Log.d("bug", "frame rate info\ntime: " + (mTimestamp- mTimeStart) + "\nframes: " + (mFrames+1));
+        }
+
+        mFrames++;
+
     }
 
     /*
@@ -220,7 +233,7 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
                 .create();
             Type yuvNV12 = new Type.Builder(mRs, Element.U8(mRs))
                 .setX(player.getVideoWidth())
-                .setY(player.getVideoHeight()*3/2)
+                .setY(player.getVideoHeight() * 3 / 2)
                 .create();
 
             mInputAllocation = Allocation.createTyped(mRs,
@@ -234,7 +247,7 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
             Log.d("bug", "surface width: " + mTextureView.getWidth() + "\nsurface height: " + mTextureView.getHeight());
             mOutputAllocation = Allocation.createTyped(mRs,
                                                        rsOutputType,
-                                                       Allocation.USAGE_IO_OUTPUT | Allocation.USAGE_SCRIPT);
+                                                       Allocation.USAGE_IO_OUTPUT | Allocation.USAGE_SCRIPT );
 
             player.setOutputSurface(mInputAllocation.getSurface());
             mOutputAllocation.setSurface(surface);
@@ -391,10 +404,10 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
         @Override
         public void onBufferAvailable(Allocation a) {
             synchronized (this) {
-                Log.d("bug", "received input allocation\nwidth: " + a.getType()
-                                                                     .getX()
-                    + "\nheight: " + a.getType()
-                                      .getY());
+//                Log.v("bug", "received input allocation\nwidth: " + a.getType()
+//                                                                     .getX()
+//                    + "\nheight: " + a.getType()
+//                                      .getY());
                 mPendingFrames++;
                 mProcessingHandler.post(this);
             }
@@ -409,21 +422,19 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
                 mProcessingHandler.removeCallbacks(this);
             }
 
+            mInputAllocation.ioReceive();
             // get new frame into allocation
-            Log.d("bug", "start ioReceive");
             // Get to newest input
-            for (int i = 0; i < pendingFrames; i++) {
+            for (int i = 1; i < pendingFrames; i++) {
+                Log.d("bug", "dropped frame");
                 mInputAllocation.ioReceive();
             }
-            Log.d("bug", "end ioReceive");
 
             mScript.set_gCurrentFrame(mInputAllocation);
             mScript.forEach_root(mOutputAllocation);
 //            mScript.forEach_root(mInputAllocation,
 //                                 mOutputAllocation);
-            Log.d("bug", "start ioSend");
             mOutputAllocation.ioSend();
-            Log.d("bug", "end ioSend");
         }
     }
 
