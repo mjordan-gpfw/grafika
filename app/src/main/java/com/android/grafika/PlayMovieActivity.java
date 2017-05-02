@@ -172,7 +172,25 @@ public class PlayMovieActivity extends Activity implements OnItemSelectedListene
             MoviePlayer player = null;
             try {
                  player = new MoviePlayer(
-                        new File(getFilesDir(), mMovieFiles[mSelectedMovie]), surface, callback);
+                     new File(getFilesDir(),
+                              mMovieFiles[mSelectedMovie]),
+                     surface,
+                     new MoviePlayer.FrameCallback() {
+                         @Override
+                         public void preRender(long presentationTimeUsec) {
+
+                         }
+
+                         @Override
+                         public void postRender() {
+
+                         }
+
+                         @Override
+                         public void loopReset() {
+
+                         }
+                     });
             } catch (IOException ioe) {
                 Log.e(TAG, "Unable to play movie", ioe);
                 surface.release();

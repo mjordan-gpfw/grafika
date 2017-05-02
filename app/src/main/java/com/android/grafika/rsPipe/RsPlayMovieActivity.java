@@ -163,8 +163,8 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
             mTimeStart = currentTimeMillis;
         }
         if (currentTimeMillis - mTimestamp > 1000) {
-            mTimestamp = currentTimeMillis;
             Log.d("bug", "frame rate info\ntime: " + (mTimestamp- mTimeStart) + "\nframes: " + (mFrames+1));
+            mTimestamp = currentTimeMillis;
         }
 
         mFrames++;
@@ -214,10 +214,27 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
             Surface surface = new Surface(st);
             MoviePlayer player = null;
             try {
+//                new File(getFilesDir(), TEST_VIDEO)
+//                new File("/sdcard/front.mp4")
                 player = new MoviePlayer(
-                    new File(getFilesDir(), TEST_VIDEO),
+                    new File("/sdcard/front.mp4"),
                     null,
-                    callback);
+                    new MoviePlayer.FrameCallback() {
+                        @Override
+                        public void preRender(long presentationTimeUsec) {
+
+                        }
+
+                        @Override
+                        public void postRender() {
+
+                        }
+
+                        @Override
+                        public void loopReset() {
+
+                        }
+                    });
             }
             catch (IOException ioe) {
                 Log.e(TAG, "Unable to play movie", ioe);
@@ -244,6 +261,7 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
                 .setX(mTextureView.getWidth())
                 .setY(mTextureView.getHeight())
                 .create();
+            Log.d("bug", "video width: " + player.getVideoWidth() + "\nvideo height: " + player.getVideoHeight());
             Log.d("bug", "surface width: " + mTextureView.getWidth() + "\nsurface height: " + mTextureView.getHeight());
             mOutputAllocation = Allocation.createTyped(mRs,
                                                        rsOutputType,
@@ -251,12 +269,15 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
 
             player.setOutputSurface(mInputAllocation.getSurface());
             mOutputAllocation.setSurface(surface);
-            ScriptC_grayscale scriptC_grayscale = new ScriptC_grayscale(mRs);
-            ScriptC_yuvToRgb scriptC_yuvToRgb = new ScriptC_yuvToRgb(mRs);
-            scriptC_yuvToRgb.set_gW(rsType.getX());
-            scriptC_yuvToRgb.set_gH(rsType.getY());
+//            ScriptC_grayscale scriptC_grayscale = new ScriptC_grayscale(mRs);
+//            ScriptC_yuvToRgb scriptC_yuvToRgb = new ScriptC_yuvToRgb(mRs);
+//            scriptC_yuvToRgb.set_gW(rsType.getX());
+//            scriptC_yuvToRgb.set_gH(rsType.getY());
 
-            ScriptC_yuvToRgbN12 scriptC_yuvToRgbN12 = new ScriptC_yuvToRgbN12(mRs);
+//            ScriptC_yuvToRgbN12 scriptC_yuvToRgbN12 = new ScriptC_yuvToRgbN12(mRs);
+//            scriptC_yuvToRgbN12.set_gW(rsType.getX());
+//            scriptC_yuvToRgbN12.set_gH(rsType.getY());
+            ScriptC_yuvToRgbFsN12 scriptC_yuvToRgbN12 = new ScriptC_yuvToRgbFsN12(mRs);
             scriptC_yuvToRgbN12.set_gW(rsType.getX());
             scriptC_yuvToRgbN12.set_gH(rsType.getY());
             ProcessingTask processingTask = new ProcessingTask(mRsHandler,
@@ -389,11 +410,11 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
 
         private int mPendingFrames = 0;
         final Handler mProcessingHandler;
-        final ScriptC_yuvToRgbN12 mScript;
+        final ScriptC_yuvToRgbFsN12 mScript;
         final Allocation mInputAllocation;
         final Allocation mOutputAllocation;
 
-        public ProcessingTask(Handler processingHandler, ScriptC_yuvToRgbN12 script, Allocation inputAllocation, Allocation outputAllocation) {
+        public ProcessingTask(Handler processingHandler, ScriptC_yuvToRgbFsN12 script, Allocation inputAllocation, Allocation outputAllocation) {
             mProcessingHandler = processingHandler;
             mScript = script;
             mInputAllocation = inputAllocation;
