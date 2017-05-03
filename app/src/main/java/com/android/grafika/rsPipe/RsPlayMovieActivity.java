@@ -32,6 +32,7 @@ import android.os.HandlerThread;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.renderscript.Type;
 import android.util.Log;
 import android.view.Surface;
@@ -280,6 +281,7 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
             ScriptC_yuvToRgbFsN12 scriptC_yuvToRgbN12 = new ScriptC_yuvToRgbFsN12(mRs);
             scriptC_yuvToRgbN12.set_gW(rsType.getX());
             scriptC_yuvToRgbN12.set_gH(rsType.getY());
+
             ProcessingTask processingTask = new ProcessingTask(mRsHandler,
                                                                scriptC_yuvToRgbN12,
                                                                mInputAllocation,
@@ -453,10 +455,7 @@ public class RsPlayMovieActivity extends Activity implements OnItemSelectedListe
 
             mScript.set_gCurrentFrame(mInputAllocation);
             mScript.forEach_root(mOutputAllocation);
-//            mScript.forEach_root(mInputAllocation,
-//                                 mOutputAllocation);
             mOutputAllocation.ioSend();
         }
     }
-
 }
